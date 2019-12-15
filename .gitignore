@@ -91,3 +91,5 @@ sw.*
 
 # Caching
 *.tgz
+
+dist
