@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	flag "github.com/spf13/pflag"
 
@@ -26,7 +27,7 @@ const (
 	specAlgorithm   = "aes"
 	specMode        = "gcm"
 	specCompression = "none"
-	pbURL           = "https://vim.cx"
+	pbDefaultURL    = "vim.cx"
 )
 
 // PasteRequest .
@@ -102,11 +103,17 @@ var date string
 
 func main() {
 	versionPtr := flag.BoolP("version", "v", false, "display version")
+	urlPtr := flag.StringP("url", "u", pbDefaultURL, "privatebin host")
 	flag.Parse()
 
 	if *versionPtr {
 		fmt.Println("Version: " + version + " (built on " + date + ")")
 		return
+	}
+
+	pbURL := strings.TrimRight(*urlPtr, "/")
+	if !strings.Contains(pbURL, "://") {
+		pbURL = "https://" + pbURL
 	}
 
 	// Read from STDIN (Piped input)
