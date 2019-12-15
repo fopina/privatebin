@@ -10,23 +10,27 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	flag "github.com/spf13/pflag"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/fopina/privatebin/types"
 	"github.com/fopina/privatebin/utils"
 	"golang.org/x/crypto/pbkdf2"
 )
 
 const (
-	specIterations  = 100000
-	specKeySize     = 256
-	specTagSize     = 128
-	specAlgorithm   = "aes"
-	specMode        = "gcm"
-	specCompression = "none"
-	pbURL           = "https://privatebin.net"
+	specIterations      = 100000
+	specKeySize         = 256
+	specTagSize         = 128
+	specAlgorithm       = "aes"
+	specMode            = "gcm"
+	specCompression     = "none"
+	pbDefaultURL        = "vim.cx"
+	pbDefaultExpiration = "1week"
 )
 
 // PasteRequest .
@@ -52,7 +56,9 @@ type PasteResponse struct {
 
 // PasteContent .
 type PasteContent struct {
-	Paste string `json:"paste"`
+	Paste          string `json:"paste"`
+	Attachment     string `json:"attachment,omitempty"`
+	AttachmentName string `json:"attachment_name,omitempty"`
 }
 
 // PasteSpec .
@@ -102,11 +108,20 @@ var date string
 
 func main() {
 	versionPtr := flag.BoolP("version", "v", false, "display version")
+	urlPtr := flag.StringP("url", "u", pbDefaultURL, "privatebin host")
+	attachmentPtr := flag.StringP("attach", "a", "", "attach a file")
+	expiration := types.ExpirationValue("1week")
+	flag.VarP(&expiration, "expire", "e", "expiration")
 	flag.Parse()
 
 	if *versionPtr {
 		fmt.Println("Version: " + version + " (built on " + date + ")")
 		return
+	}
+
+	pbURL := strings.TrimRight(*urlPtr, "/")
+	if !strings.Contains(pbURL, "://") {
+		pbURL = "https://" + pbURL
 	}
 
 	// Read from STDIN (Piped input)
@@ -120,8 +135,17 @@ func main() {
 		input = input[:len(input)-1]
 	}
 
+	pc := PasteContent{Paste: utils.StripANSI(string(input))}
+	if *attachmentPtr != "" {
+		data, err := ioutil.ReadFile(*attachmentPtr)
+		if err != nil {
+			panic(err)
+		}
+		pc.Attachment = utils.Base64(data)
+		pc.AttachmentName = filepath.Base(*attachmentPtr)
+	}
 	// Marshal the paste content to escape JSON characters.
-	pasteContent, err := json.Marshal(&PasteContent{Paste: utils.StripANSI(string(input))})
+	pasteContent, err := json.Marshal(&pc)
 	if err != nil {
 		panic(err)
 	}
@@ -143,7 +167,7 @@ func main() {
 		V:     2,
 		AData: pasteData.adata(),
 		Meta: PasteRequestMeta{
-			Expire: "1week",
+			Expire: expiration.String(),
 		},
 		CT: utils.Base64(pasteData.Data),
 	}
