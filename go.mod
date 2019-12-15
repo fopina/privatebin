@@ -1,8 +1,9 @@
-module go.matthewp.io/privatebin
+module github.com/fopina/privatebin
 
-go 1.12
+go 1.13
 
 require (
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
+	github.com/spf13/pflag v1.0.5
+	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 )
