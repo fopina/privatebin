@@ -26,7 +26,7 @@ const (
 	specAlgorithm   = "aes"
 	specMode        = "gcm"
 	specCompression = "none"
-	pbURL           = "https://privatebin.net"
+	pbURL           = "https://vim.cx"
 )
 
 // PasteRequest .
