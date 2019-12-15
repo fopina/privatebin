@@ -16,18 +16,20 @@ import (
 	flag "github.com/spf13/pflag"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/fopina/privatebin/types"
 	"github.com/fopina/privatebin/utils"
 	"golang.org/x/crypto/pbkdf2"
 )
 
 const (
-	specIterations  = 100000
-	specKeySize     = 256
-	specTagSize     = 128
-	specAlgorithm   = "aes"
-	specMode        = "gcm"
-	specCompression = "none"
-	pbDefaultURL    = "vim.cx"
+	specIterations      = 100000
+	specKeySize         = 256
+	specTagSize         = 128
+	specAlgorithm       = "aes"
+	specMode            = "gcm"
+	specCompression     = "none"
+	pbDefaultURL        = "vim.cx"
+	pbDefaultExpiration = "1week"
 )
 
 // PasteRequest .
@@ -104,6 +106,8 @@ var date string
 func main() {
 	versionPtr := flag.BoolP("version", "v", false, "display version")
 	urlPtr := flag.StringP("url", "u", pbDefaultURL, "privatebin host")
+	expiration := types.ExpirationValue("1week")
+	flag.VarP(&expiration, "expire", "e", "expiration")
 	flag.Parse()
 
 	if *versionPtr {
@@ -150,7 +154,7 @@ func main() {
 		V:     2,
 		AData: pasteData.adata(),
 		Meta: PasteRequestMeta{
-			Expire: "1week",
+			Expire: expiration.String(),
 		},
 		CT: utils.Base64(pasteData.Data),
 	}
