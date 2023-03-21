@@ -18,7 +18,7 @@ jobs:
         name: Set up Go
         uses: actions/setup-go@master
         with:
-          go-version: 1.13.x
+          go-version: 1.19.x
       -
         name: Prepare
         id: prepare
@@ -43,8 +43,8 @@ jobs:
           formula_class: Privatebin
           formula_file: privatebin
           description: PrivateBin CLI written in Golang
-          url: https://github.com/fopina/privatebin/releases/download/v${{ steps.prepare.outputs.tag_name }}/pbin_darwin_x86_64.tar.gz
+          url: https://github.com/fopina/privatebin/releases/download/v${{ steps.prepare.outputs.tag_name }}/pbin_darwin_amd64.tar.gz
           license: ''
           version: '${{ steps.prepare.outputs.tag_name }}'
           bin: pbin
-          release: ./dist/pbin_darwin_x86_64.tar.gz
+          release: ./dist/pbin_darwin_amd64.tar.gz

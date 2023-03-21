@@ -12,14 +12,22 @@ builds:
   goarch:
     - amd64
     - arm
+    - arm64
+  goarm:
+    - '7'
+  ignore:
+    - goos: windows
+      goarch: arm
+      goarm: '7'
+    - goos: windows
+      goarch: arm64
 archives:
-- replacements:
-    amd64: x86_64
-  format_overrides:
+- format_overrides:
     - goos: windows
       format: zip
   files:
     - none*
+  rlcp: true
   name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
 checksum:
   name_template: 'checksums.txt'
