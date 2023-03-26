@@ -66,3 +66,18 @@ yarn-error.log
 /.env
 /privatebin
 /privatebin.exe
+
+# Log Files
+/logs
+*.log
+
+# Service Workers
+sw.*
+
+# Serverless
+/.serverless
+
+# Caching
+*.tgz
+
+dist
