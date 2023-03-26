@@ -198,8 +198,7 @@ func main() {
 
 	// Close the request body once we are done.
 	defer func() {
-		err := res.Body.Close()
-		if err != nil {
+		if err := res.Body.Close(); err != nil {
 			panic(err)
 		}
 	}()
@@ -212,8 +211,7 @@ func main() {
 
 	// Decode the response.
 	pasteResponse := &PasteResponse{}
-	err = json.Unmarshal(response, &pasteResponse)
-	if err != nil {
+	if err := json.Unmarshal(response, &pasteResponse); err != nil {
 		panic(err)
 	}
 
