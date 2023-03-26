@@ -1,0 +1,21 @@
+name: auto update
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs: {}
+
+jobs:
+  autoupdate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+      - uses: fopina/upstream-to-pr@v1
+        with:
+          token: ${{ secrets.PAT }}
+          upstream-repository: https://github.com/matthewpi/privatebin
+          upstream-branch: develop
