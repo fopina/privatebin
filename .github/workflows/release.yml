@@ -34,17 +34,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: v${{ steps.prepare.outputs.tag_name }}
-
-      -
-        name: Update homebrew-tap
-        uses: fopina/homebrew-tap@bump-action-v1
-        with:
-          token: ${{ secrets.PAT }}
-          formula_class: Privatebin
-          formula_file: privatebin
-          description: PrivateBin CLI written in Golang
-          url: https://github.com/fopina/privatebin/releases/download/v${{ steps.prepare.outputs.tag_name }}/pbin_darwin_amd64.tar.gz
-          license: ''
-          version: '${{ steps.prepare.outputs.tag_name }}'
-          bin: pbin
-          release: ./dist/pbin_darwin_amd64.tar.gz
