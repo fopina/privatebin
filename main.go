@@ -29,7 +29,7 @@ const (
 	specAlgorithm       = "aes"
 	specMode            = "gcm"
 	specCompression     = "none"
-	pbDefaultURL        = "vim.cx"
+	pbDefaultURL        = "privatebin.net"
 	pbDefaultExpiration = "1week"
 )
 
