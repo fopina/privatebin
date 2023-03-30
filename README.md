@@ -2,6 +2,8 @@
 
 A CLI for PrivateBin allowing easy pasting from the Terminal.
 
+This is a fork from [matthewpi/privatebin](https://github.com/matthewpi/privatebin) - all credits to Matthew
+
 ## Installation
 
 Download [latest release](https://github.com/fopina/privatebin/releases/latest)
