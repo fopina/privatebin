@@ -9,4 +9,4 @@ if [[ ! "$paste_url" =~ ^https://privatebin\.net/\?[^#[:space:]]+#[1-9A-HJ-NP-Za
 	exit 1
 fi
 
-printf 'PrivateBin live upload succeeded; paste expires in 5 minutes.\n'
+printf 'PrivateBin live upload succeeded; paste expires in 5 minutes:\n%s\n' "$paste_url"
