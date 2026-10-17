@@ -48,3 +48,10 @@ jobs:
         with:
           version: ${{ github.ref_name }}
           token: ${{ secrets.TAP_TOKEN }}
+          formula_class: Pbin
+          formula_file: pbin
+          description: CLI for PrivateBin allowing easy pasting from the Terminal
+          bin: pbin
+          test: |
+            assert_match "Version: #{version}", shell_output("#{bin}/pbin -v")
+            assert_match "https://privatebin.net/?", shell_output("echo test | #{bin}/pbin")
