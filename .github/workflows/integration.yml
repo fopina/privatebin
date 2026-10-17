@@ -1,0 +1,29 @@
+name: Live integration
+
+on:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build pbin
+        run: go build -o "$RUNNER_TEMP/pbin" .
+      - name: Upload and verify paste link
+        run: PATH="$RUNNER_TEMP:$PATH" bash scripts/integration-test.sh

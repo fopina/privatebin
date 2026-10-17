@@ -7,16 +7,17 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	flag "github.com/spf13/pflag"
 
-	"github.com/btcsuite/btcutil/base58"
+	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/fopina/privatebin/types"
 	"github.com/fopina/privatebin/utils"
 	"golang.org/x/crypto/pbkdf2"
@@ -52,6 +53,7 @@ type PasteResponse struct {
 	ID          string `json:"id"`
 	URL         string `json:"url"`
 	DeleteToken string `json:"deletetoken"`
+	Message     string `json:"message"`
 }
 
 // PasteContent .
@@ -107,6 +109,13 @@ var version string = "DEV"
 var date string
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "pbin:", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	versionPtr := flag.BoolP("version", "v", false, "display version")
 	urlPtr := flag.StringP("url", "u", pbDefaultURL, "privatebin host")
 	attachmentPtr := flag.StringP("attach", "a", "", "attach a file")
@@ -116,7 +125,7 @@ func main() {
 
 	if *versionPtr {
 		fmt.Println("Version: " + version + " (built on " + date + ")")
-		return
+		return nil
 	}
 
 	pbURL := strings.TrimRight(*urlPtr, "/")
@@ -125,9 +134,9 @@ func main() {
 	}
 
 	// Read from STDIN (Piped input)
-	input, err := ioutil.ReadAll(os.Stdin)
+	input, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("read stdin: %w", err)
 	}
 
 	// Remove extra line breaks to prevent PrivateBin from breaking.
@@ -137,9 +146,9 @@ func main() {
 
 	pc := PasteContent{Paste: utils.StripANSI(string(input))}
 	if *attachmentPtr != "" {
-		data, err := ioutil.ReadFile(*attachmentPtr)
+		data, err := os.ReadFile(*attachmentPtr)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("read attachment: %w", err)
 		}
 		pc.Attachment = utils.Base64(data)
 		pc.AttachmentName = filepath.Base(*attachmentPtr)
@@ -147,19 +156,19 @@ func main() {
 	// Marshal the paste content to escape JSON characters.
 	pasteContent, err := json.Marshal(&pc)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("encode paste: %w", err)
 	}
 
 	// Generate a master key for the paste.
 	masterKey, err := utils.GenRandomBytes(32)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("generate encryption key: %w", err)
 	}
 
 	// Encrypt the paste data
 	pasteData, err := encrypt(masterKey, pasteContent)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("encrypt paste: %w", err)
 	}
 
 	// Create a new Paste Request.
@@ -175,47 +184,55 @@ func main() {
 	// Get the Request Body.
 	body, err := json.Marshal(pasteRequest)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("encode request: %w", err)
 	}
 
 	// Create a new HTTP Client and HTTP Request.
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	req, err := http.NewRequest("POST", pbURL, bytes.NewBuffer(body))
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("create request: %w", err)
 	}
 
 	// Set the request headers.
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Length", strconv.Itoa(len(body)))
 	req.Header.Set("X-Requested-With", "JSONHttpRequest")
 
 	// Run the http request.
 	res, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("send paste to %s: %w", pbURL, err)
 	}
-
-	// Close the request body once we are done.
-	defer func() {
-		if err := res.Body.Close(); err != nil {
-			panic(err)
-		}
-	}()
+	defer res.Body.Close()
 
 	// Read the response body.
-	response, err := ioutil.ReadAll(res.Body)
+	response, err := io.ReadAll(io.LimitReader(res.Body, 1<<20))
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("read server response: %w", err)
+	}
+	if res.StatusCode < http.StatusOK || res.StatusCode >= http.StatusMultipleChoices {
+		return fmt.Errorf("server returned HTTP %s: %s", res.Status, strings.TrimSpace(string(response)))
 	}
 
 	// Decode the response.
 	pasteResponse := &PasteResponse{}
 	if err := json.Unmarshal(response, &pasteResponse); err != nil {
-		panic(err)
+		return fmt.Errorf("decode server response: %w", err)
+	}
+	if pasteResponse.Status != 0 {
+		if pasteResponse.Message == "" {
+			return fmt.Errorf("server rejected paste (status %d)", pasteResponse.Status)
+		}
+		return fmt.Errorf("server rejected paste: %s", pasteResponse.Message)
+	}
+	if pasteResponse.URL == "" {
+		return fmt.Errorf("server response did not include a paste URL")
 	}
 
 	fmt.Printf("%s%s#%s\n", pbURL, pasteResponse.URL, base58.Encode(masterKey))
+	return nil
 }
 
 func encrypt(master []byte, message []byte) (*PasteData, error) {
