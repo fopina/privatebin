@@ -38,3 +38,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: v${{ steps.prepare.outputs.tag_name }}
+
+  bump-homebrew:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Homebrew formula
+        uses: fopina/homebrew-tap@bump-action-assets
+        with:
+          version: ${{ github.ref_name }}
+          token: ${{ secrets.TAP_TOKEN }}
