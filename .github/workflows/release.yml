@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update Homebrew formula
-        uses: fopina/homebrew-tap@bump-action-assets
+        uses: fopina/homebrew-tap@bump-action-v2
         with:
           version: ${{ github.ref_name }}
           token: ${{ secrets.TAP_TOKEN }}
